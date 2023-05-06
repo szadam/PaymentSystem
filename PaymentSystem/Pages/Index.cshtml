@@ -1,0 +1,75 @@
+﻿@page
+@model IndexModel
+@{
+    ViewData["Title"] = "Home page";
+}
+
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="UTF-8">
+	<title>Payment Service Frontend</title>
+</head>
+<body>
+	<h1>Payment Service Frontend</h1>
+	<form action="" method="post">
+		<label for="amount">Amount:</label>
+		<input type="number" id="amount" name="amount" min="0.01" step="0.01" required><br><br>
+		<label for="cardNumber">Card number:</label>
+		<input type="text" id="cardNumber" name="cardNumber" pattern="[0-9]{16}" required><br><br>
+		<label for="cardExpiration">Card expiration (MM/YY):</label>
+		<input type="text" id="cardExpiration" name="cardExpiration" pattern="(0[1-9]|1[0-2])\/[0-9]{2}" required><br><br>
+		<label for="cardCvv">Card CVV:</label>
+		<input type="text" id="cardCvv" name="cardCvv" pattern="[0-9]{3}" required><br><br>
+		<button type="submit">Pay</button>
+	</form>
+	<div id="result"></div>
+	<script>
+		const form = document.querySelector('form');
+		form.addEventListener('submit', event => {
+			event.preventDefault();
+			const amount = document.getElementById('amount').value;
+			const cardNumber = document.getElementById('cardNumber').value;
+			const cardExpiration = document.getElementById('cardExpiration').value;
+			const cardCvv = document.getElementById('cardCvv').value;
+			const paymentRequest = {
+				Amount: parseFloat(amount),
+				CardNumber: cardNumber,
+				CardExpiration: cardExpiration,
+				CardCvv: cardCvv
+			};
+			fetch('/api/payment', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify(paymentRequest)
+			})
+				.then(response => {
+					if (response.ok) {
+						return response.json();
+					} else {
+						throw new Error('Payment failed');
+					}
+				})
+				.then(paymentResponse => {
+					const resultDiv = document.getElementById('result');
+					if (paymentResponse.Success) {
+						resultDiv.innerHTML = `
+								<p>Payment succeeded!</p>
+								<p>Transaction ID: ${paymentResponse.TransactionId}</p>
+								<p>Amount: ${paymentResponse.Amount}</p>
+								<p>Timestamp: ${paymentResponse.Timestamp}</p>
+							`;
+					} else {
+						resultDiv.innerHTML = '<p>Payment failed</p>';
+					}
+				})
+				.catch(error => {
+					const resultDiv = document.getElementById('result');
+					resultDiv.innerHTML = `<p>${error.message}</p>`;
+				});
+		});
+	</script>
+</body>
+</html>
